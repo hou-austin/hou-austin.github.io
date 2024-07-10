@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Camping Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-bottom: 200px;
+            padding: 20px;
+            background-color: #f4f4f4;
+            padding-bottom: 120px;
+            /* Extra bottom padding to prevent footer overlap */
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #4a5568;
+            text-align: center;
+        }
+
+        h2 {
+            color: #2d3748;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .flex-item {
+            flex: 1 1 380px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-group label {
+            flex: 0 0 150px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .form-group input[type="number"],
+        .form-group select {
+            flex: 1 1 150px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #4a5568;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #2d3748;
+        }
+
+        #results {
+            flex-grow: 1;
+            margin-right: 20px;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>D&D Camping Calculator</h1>
+
+        <div class="section">
+            <div class="flex-container">
+                <div class="flex-item">
+                    <h2>Camp Focus Formula Inputs</h2>
+                    <div id="formulaInputs">
+                        <!-- Formula inputs will be dynamically added here -->
+                    </div>
+                </div>
+                <div class="flex-item">
+                    <h2>Weather Conditions</h2>
+                    <div id="weatherConditions">
+                        <!-- Weather Conditions will be dynamically added here -->
+                    </div>
+                </div>
+                <div class="flex-item">
+                    <h2>Location</h2>
+                    <div id="locations">
+                        <!-- Locations will be dynamically added here -->
+                    </div>
+                    <div class="form-group">
+                        <label for="findingCampSuccess">Finding Camp Success</label>
+                        <input type="checkbox" id="findingCampSuccess">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Camp Focuses</h2>
+            <div id="campFocuses" class="flex-container">
+                <!-- Camp Focuses will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="button-group">
+            <button id="calculateButton">Calculate</button>
+            <button id="resetButton">Reset</button>
+        </div>
+        <div id="results" class="hidden"></div>
+    </div>
+
+    <script>
+        const campFocuses = [
+            { name: 'Healthcare', check: 'Medicine', tools: ['Herbalism Kit', 'Alchemists\' Supplies', 'Cook\'s Utensils'] },
+            { name: 'Setup', check: 'Athletics', tools: ['Carpenter\'s Tools', 'Mason\'s Tools', 'Tinker\'s Tools'] },
+            { name: 'Defense', check: 'Athletics', tools: ['Artisan\'s Tools', 'Leatherworker\'s Tools', 'Cobbler\'s Tools', 'Weaver\'s Tools'] },
+            { name: 'Profile', check: 'Stealth/Performance', tools: ['Thieves\' Tools', 'Disguise Kit', 'Forgery Kit'] },
+            { name: 'Animal Handling', check: 'Animal Handling', tools: ['Herbalism Kit'] },
+            { name: 'Entertainment', check: 'Performance', tools: ['Gaming Set', 'Musical Instrument'] }
+        ];
+
+        const weatherConditions = [
+            { name: 'Temperature', type: 'number', placeholder: 'Enter temperature (°C)' },
+            { name: 'Rain', options: ['None', 'Light Mist', 'Drizzle', 'Steady Rainfall', 'Strong Rainfall', 'Pounding Rain', 'Downpour'] },
+            { name: 'Snow', options: ['None', 'A Few Flakes', 'A Dusting of Snow', 'Flurries', 'Moderate Snowfall', 'Heavy Snowfall', 'Blizzard'] },
+            { name: 'Wind', options: ['Calm', 'Light Air', 'Light Breeze', 'Gentle Breeze', 'Moderate Breeze', 'Fresh Breeze', 'Strong Breeze', 'Moderate Gale', 'Fresh Gale', 'Strong Gale', 'Storm', 'Violent Storm', 'Tornado', 'Hurricane'] },
+            { name: 'Clouds', options: ['Clear', 'A Few Clouds', 'Mostly Cloudy', 'Gray, Slightly Overcast', 'Gray, Highly Overcast', 'Dark Storm Clouds'] }
+        ];
+
+        const locations = ['Roadside', 'Forest', 'Desert', 'Mountain', 'Marsh', 'Grassland', 'Tundra', 'Coastal', 'Cave', 'Volcanic'];
+
+        const formulaInputs = [
+            { name: 'teamWisdom', label: 'Cumulative Team Wisdom', placeholder: 'Enter team wisdom' },
+            { name: 'teamSurvival', label: 'Cumulative Team Survival', placeholder: 'Enter team survival' },
+            { name: 'equipmentValue', label: 'Equipment Value', placeholder: 'Enter equipment value' },
+            { name: 'partySize', label: 'Party Size', placeholder: 'Enter party size' },
+            { name: 'travelFatigue', label: 'Travel Fatigue', placeholder: 'Enter travel fatigue' }
+        ];
+
+        const conditionEffects = {
+            Rain: [
+                { row: 1, effect: { Entertainment: -1 } },
+                { row: 2, effect: { Setup: -1, Profile: 1 } },
+                { row: 5, effect: { Healthcare: -1 } }
+            ],
+            Snow: [
+                { row: 2, effect: { Setup: -1, Profile: 1, Entertainment: -1 } },
+                { row: 5, effect: { Healthcare: -1 } }
+            ],
+            Wind: [
+                { row: 4, effect: { Setup: -1 } },
+                { row: 5, effect: { Entertainment: -1 } },
+                { row: 10, effect: { Healthcare: -1 } }
+            ],
+            Clouds: [
+                { row: 3, effect: { Profile: -1 } }
+            ]
+        };
+
+        function createFormElement(item) {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `
+                <label for="${item.name}">${item.label || item.name}</label>
+                ${item.options ?
+                    `<select id="${item.name}" name="${item.name.toLowerCase()}">
+                        ${item.options.map((option, index) => `<option value="${index}">${option}</option>`).join('')}
+                    </select>` :
+                    `<input type="${item.type || 'number'}" id="${item.name}" name="${item.name.toLowerCase()}" placeholder="${item.placeholder}">
+                `}
+            `;
+            return div;
+        }
+
+        function createCampFocusElement(focus) {
+            const div = document.createElement('div');
+            div.className = 'flex-item';
+            div.innerHTML = `
+                <h3>${focus.name}</h3>
+                <div class="form-group">
+                    <label>Points</label>
+                    <input type="number" name="${focus.name.toLowerCase()}Points" placeholder="Points">
+                </div>
+                <div class="form-group">
+                    <label>Check Result</label>
+                    <select name="${focus.name.toLowerCase()}Check">
+                        <option value="success">Success</option>
+                        <option value="failure">Failure</option>
+                    </select>
+                </div>
+                <p>Skill Check DC: <span id="${focus.name.toLowerCase()}DC">14</span></p>
+                ${focus.tools.map(tool => `
+                    <div class="form-group">
+                        <label>${tool}</label>
+                        <input type="checkbox" id="${tool.replace(/\s+/g, '')}" name="${focus.name.toLowerCase()}Tools" value="${tool}" onchange="updateSkillCheckDC('${focus.name}')">
+                        <label>Proficient</label>
+                        <input type="checkbox" id="${tool.replace(/\s+/g, '')}Proficiency" name="${focus.name.toLowerCase()}ToolsProficiency" onchange="updateSkillCheckDC('${focus.name}')">
+                    </div>
+                `).join('')}
+            `;
+            return div;
+        }
+
+        function createLocationElement(location) {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `
+                <label for="${location}">${location}</label>
+                <input type="checkbox" id="${location}" name="locations" value="${location}">
+                <select id="${location}Tier" name="${location}Tier">
+                    ${location === 'Volcanic' ? `
+                        <option value="3">Tier 3</option>
+                        <option value="4">Tier 4</option>
+                        <option value="5">Tier 5</option>
+                    ` : `
+                        <option value="1">Tier 1</option>
+                        <option value="2">Tier 2</option>
+                        <option value="3">Tier 3</option>
+                    `}
+                </select>
+            `;
+            return div;
+        }
+
+        function updateSkillCheckDC(focusName) {
+            const dcElement = document.getElementById(`${focusName.toLowerCase()}DC`);
+            let dc = 14; // Base DC
+            const tools = document.getElementsByName(`${focusName.toLowerCase()}Tools`);
+            tools.forEach(tool => {
+                if (tool.checked) {
+                    dc -= 1; // -1 for using the tool
+                    const proficiencyCheckbox = document.getElementById(`${tool.id}Proficiency`);
+                    if (proficiencyCheckbox && proficiencyCheckbox.checked) {
+                        dc -= 1; // Additional -1 for proficiency
+                    }
+                }
+            });
+            dcElement.textContent = dc;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const formulaInputsContainer = document.getElementById('formulaInputs');
+            formulaInputs.forEach(input => {
+                formulaInputsContainer.appendChild(createFormElement(input));
+            });
+
+            const weatherConditionsContainer = document.getElementById('weatherConditions');
+            weatherConditions.forEach(condition => {
+                weatherConditionsContainer.appendChild(createFormElement(condition));
+            });
+
+            const locationsContainer = document.getElementById('locations');
+            locations.forEach(location => {
+                locationsContainer.appendChild(createLocationElement(location));
+            });
+
+            const campFocusesContainer = document.getElementById('campFocuses');
+            campFocuses.forEach(focus => {
+                campFocusesContainer.appendChild(createCampFocusElement(focus));
+            });
+
+            document.getElementById('calculateButton').addEventListener('click', calculateCampFocusPoints);
+            document.getElementById('resetButton').addEventListener('click', resetCalculator);
+        });
+
+        function calculateCampFocusPoints() {
+            // Calculate base camp points
+            const teamWisdom = parseInt(document.getElementById('teamWisdom').value) || 0;
+            const teamSurvival = parseInt(document.getElementById('teamSurvival').value) || 0;
+            const equipmentValue = parseInt(document.getElementById('equipmentValue').value) || 0;
+            const partySize = parseInt(document.getElementById('partySize').value) || 1;
+            const travelFatigue = parseInt(document.getElementById('travelFatigue').value) || 0;
+
+            let campPoints = Math.floor(Math.max(teamWisdom, teamSurvival / 2) + (equipmentValue / partySize)) - travelFatigue;
+
+            // Calculate effects of weather conditions
+            const weatherEffects = {
+                Healthcare: 0,
+                Setup: 0,
+                Defense: 0,
+                Profile: 0,
+                'Animal Handling': 0,
+                Entertainment: 0
+            };
+
+            // Temperature effect (updated)
+            const temperature = parseInt(document.querySelector('input[name="temperature"]').value) || 20;
+            let tempTier = 0;
+            if (temperature < 15) {
+                tempTier = Math.ceil((15 - temperature) / 5);
+            } else if (temperature > 25) {
+                tempTier = Math.ceil((temperature - 25) / 5);
+            }
+            weatherEffects.Healthcare -= tempTier;
+
+            // Other weather conditions
+            weatherConditions.forEach(condition => {
+                if (condition.name !== 'Temperature') {
+                    const intensity = parseInt(document.querySelector(`select[name="${condition.name.toLowerCase()}"]`).value);
+                    if (intensity > 0 && conditionEffects[condition.name]) {
+                        conditionEffects[condition.name].forEach(effect => {
+                            if (intensity >= effect.row) {
+                                Object.entries(effect.effect).forEach(([focus, value]) => {
+                                    weatherEffects[focus] += value * (intensity - effect.row + 1);
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Calculate location effects
+            let locationEffects = {
+                Healthcare: 0,
+                Setup: 0,
+                Defense: 0,
+                Profile: 0,
+                'Animal Handling': 0,
+                Entertainment: 0
+            };
+
+            const checkedLocations = document.querySelectorAll('input[name="locations"]:checked');
+            checkedLocations.forEach(location => {
+                const tier = parseInt(document.getElementById(`${location.value}Tier`).value);
+                switch (location.value) {
+                    case 'Roadside':
+                        locationEffects.Profile += tier;
+                        break;
+                    case 'Forest':
+                        locationEffects.Setup -= tier;
+                        locationEffects.Profile -= tier;
+                        locationEffects.Entertainment -= tier;
+                        break;
+                    case 'Desert':
+                        locationEffects.Healthcare -= tier;
+                        locationEffects.Profile -= tier;
+                        break;
+                    case 'Mountain':
+                        locationEffects.Setup -= tier;
+                        locationEffects.Profile += tier;
+                        break;
+                    case 'Marsh':
+                        locationEffects.Setup -= tier;
+                        locationEffects.Entertainment -= tier;
+                        break;
+                    case 'Grassland':
+                        locationEffects.Profile += tier;
+                        break;
+                    case 'Tundra':
+                        locationEffects.Setup -= tier;
+                        locationEffects.Healthcare -= tier;
+                        locationEffects.Entertainment -= tier;
+                        break;
+                    case 'Coastal':
+                        locationEffects.Profile += tier;
+                        break;
+                    case 'Cave':
+                        locationEffects.Profile -= tier;
+                        break;
+                    case 'Volcanic':
+                        locationEffects.Healthcare -= tier;
+                        locationEffects.Setup -= tier;
+                        locationEffects.Profile -= tier;
+                        locationEffects.Entertainment -= tier;
+                        break;
+                }
+            });
+
+            // Apply Finding Camp skill check
+            const findingCampSuccess = document.getElementById('findingCampSuccess').checked;
+            if (findingCampSuccess) {
+                Object.keys(locationEffects).forEach(key => {
+                    locationEffects[key] = Math.floor(locationEffects[key] / 2);
+                });
+            }
+
+            // Calculate final camp focus points
+            let finalPoints = {};
+            campFocuses.forEach(focus => {
+                const basePoints = parseInt(document.querySelector(`input[name="${focus.name.toLowerCase()}Points"]`).value) || 0;
+                const checkResult = document.querySelector(`select[name="${focus.name.toLowerCase()}Check"]`).value;
+                let points = basePoints + weatherEffects[focus.name] + locationEffects[focus.name];
+
+                if (checkResult === 'failure') {
+                    points = Math.floor(points / 2);
+                }
+
+                finalPoints[focus.name] = points;
+            });
+
+            // Determine allowed and disallowed equipment
+            const allowedEquipment = ['Tent', 'Bedroll'];
+            const disallowedEquipment = [];
+
+            const windIntensity = parseInt(document.querySelector('select[name="wind"]').value);
+            if (windIntensity >= 4) {  // Moderate Breeze or stronger
+                disallowedEquipment.push('Tent');
+                allowedEquipment.splice(allowedEquipment.indexOf('Tent'), 1);
+            }
+            if (windIntensity >= 6) {  // Strong Breeze or stronger
+                disallowedEquipment.push('Bedroll');
+                allowedEquipment.splice(allowedEquipment.indexOf('Bedroll'), 1);
+            }
+
+            // Display results
+            const resultContent = document.getElementById('results');
+            resultContent.innerHTML = `
+            <p><strong>Total Camp Points:</strong> ${campPoints}</p>
+            <p><strong>Final Camp Focus Points:</strong> ${Object.entries(finalPoints).map(([focus, points]) => `${focus}: ${points}`).join(', ')}</p>
+            <p><strong>Allowed Equipment:</strong> ${allowedEquipment.join(', ') || 'None'}</p>
+            <p><strong>Disallowed Equipment:</strong> ${disallowedEquipment.join(', ') || 'None'}</p>
+            <p><strong>Setup Time:</strong> ${Math.ceil(Math.abs(campPoints) / 4)} hour(s)</p>
+        `;
+            resultContent.classList.remove('hidden');
+        }
+
+        function resetCalculator() {
+            // Reset all input fields
+            document.querySelectorAll('input[type="number"], input[type="checkbox"]').forEach(input => {
+                if (input.type === 'number') {
+                    input.value = '';
+                } else if (input.type === 'checkbox') {
+                    input.checked = false;
+                }
+            });
+
+            // Reset all select elements
+            document.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = 0;
+            });
+
+            // Reset skill check DCs
+            campFocuses.forEach(focus => {
+                document.getElementById(`${focus.name.toLowerCase()}DC`).textContent = '14';
+            });
+
+            // Hide results
+            document.getElementById('results').classList.add('hidden');
+        }
+    </script>
+</body>
+
+</html>
